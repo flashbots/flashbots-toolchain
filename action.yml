@@ -1,0 +1,14 @@
+name: "Flashbots toolchain"
+description: "Utility to download Flashbots tools"
+inputs:
+  suave-geth:
+    description: "Download suave-geth"
+    required: false
+    default: ""
+  builder-playground:
+    description: "Download the builder-playground"
+    required: false
+    default: ""
+runs:
+  using: "node20"
+  main: "dist/index.js"
