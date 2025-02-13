@@ -51,6 +51,7 @@ jobs:
         uses: ./
         with:
           suave-geth: latest
+          builder-playground: latest
 
       # Add additional test steps to verify the releases were downloaded
       - name: Verify action results
