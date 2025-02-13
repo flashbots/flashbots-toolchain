@@ -26,3 +26,5 @@ jobs:
 | -------------------- | ------------ | ---------------------------------------------- | -------- |
 | `suave-geth`         | No           | Version to install, e.g. `latest` or `v0.1.0`. | string   |
 | `builder-playground` | No           | Version to install, e.g. `latest` or `v0.1.0`. | string   |
+| `reth`               | No           | Version to install, e.g. `latest` or `v0.1.0`. | string   |
+| `op-reth`            | No           | Version to install, e.g. `latest` or `v0.1.0`. | string   |
