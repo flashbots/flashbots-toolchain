@@ -13,7 +13,7 @@ jobs:
     name: Suapp
     steps:
       - name: Install suave-geth
-        uses: flashbots/flashbots-toolchain@v0.1
+        uses: flashbots/flashbots-toolchain@v0.2
         with:
           suave-geth: latest
       - name: Which suave-geth
