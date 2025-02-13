@@ -3,20 +3,23 @@ const toolCache = require("@actions/tool-cache");
 const path = require("path");
 const axios = require("axios");
 
-let repos = ["suave-geth", "builder-playground"];
+let repos = {
+  "suave-geth": tryDownloadGoReleaser,
+  "builder-playground": tryDownloadGoReleaser,
+};
 
 async function main() {
-  for (let repo of repos) {
+  for (let [repo, downloadFn] of Object.entries(repos)) {
+    let version = core.getInput(repo);
     try {
-      await tryDownloadRelease(repo);
+      await downloadFn(repo, version);
     } catch (error) {
       core.setFailed(`Failed to download ${repo}: ${error}`);
     }
   }
 }
 
-async function tryDownloadRelease(repo) {
-  let version = core.getInput(repo);
+async function tryDownloadGoReleaser(repo, version) {
   if (version == "") {
     return
   } else if (version == "latest") {

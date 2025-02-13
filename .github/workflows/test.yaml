@@ -38,3 +38,21 @@ jobs:
             exit 1
           fi
         id: diff
+
+  test-action:
+    # This ensures tests run after the build check
+    needs: check-dist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # This uses the action from the current repository
+      - name: Test the action
+        uses: ./
+        with:
+          suave-geth: latest
+
+      # Add additional test steps to verify the releases were downloaded
+      - name: Verify action results
+        run: |
+          suave-geth --version
