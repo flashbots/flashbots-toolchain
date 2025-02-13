@@ -52,8 +52,12 @@ jobs:
         with:
           suave-geth: latest
           builder-playground: latest
+          reth: latest
+          op-reth: latest
 
       # Add additional test steps to verify the releases were downloaded
       - name: Verify action results
         run: |
           suave-geth --version
+          reth --version
+          op-reth --version

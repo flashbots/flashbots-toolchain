@@ -30954,7 +30954,6 @@ async function downloadAndExtractTool(url, fileType) {
 
 async function downloadRelease(repoKey, version) {
   if (!version) {
-    core.info(`Skipping ${repoKey} as no version was specified`);
     return;
   }
 
