@@ -30920,6 +30920,7 @@ const RELEASE_CONFIGS = {
   },
   "op-reth": {
     org: "paradigmxyz",
+    repo: "reth",
     binaryName: "op-reth",
     getAssetName: (version) => `op-reth-${version}-x86_64-unknown-linux-gnu.tar.gz`,
     fileType: "tar"
@@ -30927,10 +30928,10 @@ const RELEASE_CONFIGS = {
 };
 
 async function main() {
-  for (const repoKey of Object.keys(RELEASE_CONFIGS)) {
-    const version = core.getInput(repoKey);
+  for (const nameKey of Object.keys(RELEASE_CONFIGS)) {
+    const version = core.getInput(nameKey);
     try {
-      await downloadRelease(repoKey, version);
+      await downloadRelease(nameKey, version);
     } catch (error) {
       core.setFailed(error.message);
     }
@@ -30952,16 +30953,17 @@ async function downloadAndExtractTool(url, fileType) {
   return await extract(pathToArchive);
 }
 
-async function downloadRelease(repoKey, version) {
+async function downloadRelease(nameKey, version) {
   if (!version) {
     return;
   }
 
-  const config = RELEASE_CONFIGS[repoKey];
+  const config = RELEASE_CONFIGS[nameKey];
   if (!config) {
-    throw new Error(`No configuration found for ${repoKey}`);
+    throw new Error(`No configuration found for ${nameKey}`);
   }
 
+  let repoKey = config.repo || nameKey;
   try {
     const resolvedVersion = version === "latest" 
       ? await getLatestVersion(config.org, repoKey)
@@ -30970,13 +30972,13 @@ async function downloadRelease(repoKey, version) {
     const assetName = config.getAssetName(resolvedVersion);
     const url = `https://github.com/${config.org}/${repoKey}/releases/download/${resolvedVersion}/${assetName}`;
     
-    core.info(`Downloading ${repoKey} from: ${url}`);
+    core.info(`Downloading ${nameKey} from: ${url}`);
     const pathToCLI = await downloadAndExtractTool(url, config.fileType);
     core.addPath(path.join(pathToCLI, "."));
     
-    core.info(`Successfully installed ${repoKey} version ${resolvedVersion}`);
+    core.info(`Successfully installed ${nameKey} version ${resolvedVersion}`);
   } catch (error) {
-    throw new Error(`Failed to download ${repoKey}: ${error.message}`);
+    throw new Error(`Failed to download ${nameKey}: ${error.message}`);
   }
 }
 
