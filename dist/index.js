@@ -30970,6 +30970,7 @@ async function downloadRelease(repoKey, version) {
     const assetName = config.getAssetName(resolvedVersion);
     const url = `https://github.com/${config.org}/${repoKey}/releases/download/${resolvedVersion}/${assetName}`;
     
+    core.info(`Downloading ${repoKey} from: ${url}`);
     const pathToCLI = await downloadAndExtractTool(url, config.fileType);
     core.addPath(path.join(pathToCLI, "."));
     
