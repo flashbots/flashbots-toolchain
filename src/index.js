@@ -29,6 +29,14 @@ const RELEASE_CONFIGS = {
     binaryName: "op-reth",
     getAssetName: (version) => `op-reth-${version}-x86_64-unknown-linux-gnu.tar.gz`,
     fileType: "tar"
+  },
+  "docker-compose": {
+    org: "docker",
+    repo: "compose",
+    binaryName: "docker-compose",
+    getAssetName: (version) => `docker-compose-linux-x86_64-${version}`,
+    fileType: "binary",
+    isBinary: true
   }
 };
 
@@ -49,9 +57,18 @@ async function getLatestVersion(org, repo) {
   return response.data.tag_name;
 }
 
-async function downloadAndExtractTool(url, fileType) {
+async function downloadAndExtractTool(url, fileType, isBinary = false) {
   core.info(`Downloading from: ${url}`);
   const pathToArchive = await toolCache.downloadTool(url);
+  
+  if (isBinary) {
+    // For binary files, we need to make it executable and move it to the right location
+    const fs = require('fs');
+    const targetPath = path.join(path.dirname(pathToArchive), 'docker-compose');
+    fs.chmodSync(pathToArchive, '755');
+    fs.renameSync(pathToArchive, targetPath);
+    return path.dirname(targetPath);
+  }
   
   core.debug(`Extracting ${pathToArchive}`);
   const extract = fileType === "zip" ? toolCache.extractZip : toolCache.extractTar;
@@ -78,7 +95,7 @@ async function downloadRelease(nameKey, version) {
     const url = `https://github.com/${config.org}/${repoKey}/releases/download/${resolvedVersion}/${assetName}`;
     
     core.info(`Downloading ${nameKey} from: ${url}`);
-    const pathToCLI = await downloadAndExtractTool(url, config.fileType);
+    const pathToCLI = await downloadAndExtractTool(url, config.fileType, config.isBinary);
     core.addPath(path.join(pathToCLI, "."));
     
     core.info(`Successfully installed ${nameKey} version ${resolvedVersion}`);

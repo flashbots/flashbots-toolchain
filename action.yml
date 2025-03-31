@@ -17,6 +17,10 @@ inputs:
     description: "Download op-reth"
     required: false
     default: ""
+  docker-compose:
+    description: "Download docker-compose (e.g., 'v2.24.5' or 'latest')"
+    required: false
+    default: ""
 runs:
   using: "node20"
   main: "dist/index.js"
