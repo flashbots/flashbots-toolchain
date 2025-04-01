@@ -2,8 +2,31 @@ const core = require("@actions/core");
 const toolCache = require("@actions/tool-cache");
 const path = require("path");
 const axios = require("axios");
+const { execSync } = require('child_process');
 
-// Configuration for different releases
+async function installDockerCompose() {
+  try {
+    execSync('sudo apt-get update', { stdio: 'inherit' });
+    execSync('sudo apt-get install -y ca-certificates curl', { stdio: 'inherit' });
+    execSync('sudo install -m 0755 -d /etc/apt/keyrings', { stdio: 'inherit' });
+    execSync('sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc', { stdio: 'inherit' });
+    execSync('sudo chmod a+r /etc/apt/keyrings/docker.asc', { stdio: 'inherit' });
+
+    const architecture = execSync('dpkg --print-architecture').toString().trim();
+    const ubuntuCodename = execSync('. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}"').toString().trim();
+    const dockerListContent = `deb [arch=${architecture} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${ubuntuCodename} stable`;
+    execSync(`echo "${dockerListContent}" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`, { stdio: 'inherit' });
+
+    execSync('sudo apt-get update', { stdio: 'inherit' });
+    execSync('sudo apt-get install -y docker-compose-plugin', { stdio: 'inherit' });
+
+    execSync('docker compose version', { stdio: 'inherit' });
+    return true;
+  } catch (error) {
+    throw new Error(`Failed to install Docker Compose: ${error.message}`);
+  }
+}
+
 const RELEASE_CONFIGS = {
   "suave-geth": {
     org: "flashbots",
@@ -15,7 +38,11 @@ const RELEASE_CONFIGS = {
     org: "flashbots",
     binaryName: "builder-playground",
     getAssetName: (version) => `builder-playground_${version}_linux_amd64.zip`,
-    fileType: "zip"
+    fileType: "zip",
+    postInstall: async () => {
+      core.info('Installing Docker Compose for builder-playground...');
+      await installDockerCompose();
+    }
   },
   "reth": {
     org: "paradigmxyz",
@@ -29,14 +56,6 @@ const RELEASE_CONFIGS = {
     binaryName: "op-reth",
     getAssetName: (version) => `op-reth-${version}-x86_64-unknown-linux-gnu.tar.gz`,
     fileType: "tar"
-  },
-  "docker-compose": {
-    org: "docker",
-    repo: "compose",
-    binaryName: "docker-compose",
-    getAssetName: (version) => `docker-compose-linux-x86_64-${version}`,
-    fileType: "binary",
-    isBinary: true
   }
 };
 
@@ -62,7 +81,6 @@ async function downloadAndExtractTool(url, fileType, isBinary = false) {
   const pathToArchive = await toolCache.downloadTool(url);
   
   if (isBinary) {
-    // For binary files, we need to make it executable and move it to the right location
     const fs = require('fs');
     const targetPath = path.join(path.dirname(pathToArchive), 'docker-compose');
     fs.chmodSync(pathToArchive, '755');
@@ -95,10 +113,14 @@ async function downloadRelease(nameKey, version) {
     const url = `https://github.com/${config.org}/${repoKey}/releases/download/${resolvedVersion}/${assetName}`;
     
     core.info(`Downloading ${nameKey} from: ${url}`);
-    const pathToCLI = await downloadAndExtractTool(url, config.fileType, config.isBinary);
+    const pathToCLI = await downloadAndExtractTool(url, config.fileType);
     core.addPath(path.join(pathToCLI, "."));
     
     core.info(`Successfully installed ${nameKey} version ${resolvedVersion}`);
+
+    if (config.postInstall) {
+      await config.postInstall();
+    }
   } catch (error) {
     throw new Error(`Failed to download ${nameKey}: ${error.message}`);
   }
