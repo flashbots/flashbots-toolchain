@@ -6,21 +6,19 @@ const { execSync } = require('child_process');
 
 async function installDockerCompose() {
   try {
-    execSync('sudo apt-get update', { stdio: 'inherit' });
-    execSync('sudo apt-get install -y ca-certificates curl', { stdio: 'inherit' });
-    execSync('sudo install -m 0755 -d /etc/apt/keyrings', { stdio: 'inherit' });
-    execSync('sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc', { stdio: 'inherit' });
-    execSync('sudo chmod a+r /etc/apt/keyrings/docker.asc', { stdio: 'inherit' });
-
-    const architecture = execSync('dpkg --print-architecture').toString().trim();
-    const ubuntuCodename = execSync('. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}"').toString().trim();
-    const dockerListContent = `deb [arch=${architecture} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${ubuntuCodename} stable`;
-    execSync(`echo "${dockerListContent}" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`, { stdio: 'inherit' });
-
-    execSync('sudo apt-get update', { stdio: 'inherit' });
-    execSync('sudo apt-get install -y docker-compose-plugin', { stdio: 'inherit' });
-
-    execSync('docker compose version', { stdio: 'inherit' });
+    const commands = `
+      sudo apt-get update &&
+      sudo apt-get install -y ca-certificates curl &&
+      sudo install -m 0755 -d /etc/apt/keyrings &&
+      sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc &&
+      sudo chmod a+r /etc/apt/keyrings/docker.asc &&
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "\${UBUNTU_CODENAME:-\$VERSION_CODENAME}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null &&
+      sudo apt-get update &&
+      sudo apt-get install -y docker-compose-plugin &&
+      docker compose --version
+      `;
+    
+    execSync(commands, { stdio: 'inherit' });
     return true;
   } catch (error) {
     throw new Error(`Failed to install Docker Compose: ${error.message}`);
