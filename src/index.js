@@ -74,17 +74,9 @@ async function getLatestVersion(org, repo) {
   return response.data.tag_name;
 }
 
-async function downloadAndExtractTool(url, fileType, isBinary = false) {
+async function downloadAndExtractTool(url, fileType) {
   core.info(`Downloading from: ${url}`);
   const pathToArchive = await toolCache.downloadTool(url);
-  
-  if (isBinary) {
-    const fs = require('fs');
-    const targetPath = path.join(path.dirname(pathToArchive), 'docker-compose');
-    fs.chmodSync(pathToArchive, '755');
-    fs.renameSync(pathToArchive, targetPath);
-    return path.dirname(targetPath);
-  }
   
   core.debug(`Extracting ${pathToArchive}`);
   const extract = fileType === "zip" ? toolCache.extractZip : toolCache.extractTar;
