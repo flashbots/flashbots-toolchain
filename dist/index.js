@@ -30897,8 +30897,29 @@ const core = __nccwpck_require__(2186);
 const toolCache = __nccwpck_require__(7784);
 const path = __nccwpck_require__(1017);
 const axios = __nccwpck_require__(8757);
+const { execSync } = __nccwpck_require__(2081);
 
-// Configuration for different releases
+async function installDockerCompose() {
+  try {
+    const commands = `
+      sudo apt-get update &&
+      sudo apt-get install -y ca-certificates curl &&
+      sudo install -m 0755 -d /etc/apt/keyrings &&
+      sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc &&
+      sudo chmod a+r /etc/apt/keyrings/docker.asc &&
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "\${UBUNTU_CODENAME:-\$VERSION_CODENAME}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null &&
+      sudo apt-get update &&
+      sudo apt-get install -y docker-compose-plugin &&
+      docker compose --version
+      `;
+    
+    execSync(commands, { stdio: 'inherit' });
+    return true;
+  } catch (error) {
+    throw new Error(`Failed to install Docker Compose: ${error.message}`);
+  }
+}
+
 const RELEASE_CONFIGS = {
   "suave-geth": {
     org: "flashbots",
@@ -30910,7 +30931,11 @@ const RELEASE_CONFIGS = {
     org: "flashbots",
     binaryName: "builder-playground",
     getAssetName: (version) => `builder-playground_${version}_linux_amd64.zip`,
-    fileType: "zip"
+    fileType: "zip",
+    postInstall: async () => {
+      core.info('Installing Docker Compose for builder-playground...');
+      await installDockerCompose();
+    }
   },
   "reth": {
     org: "paradigmxyz",
@@ -30977,6 +31002,10 @@ async function downloadRelease(nameKey, version) {
     core.addPath(path.join(pathToCLI, "."));
     
     core.info(`Successfully installed ${nameKey} version ${resolvedVersion}`);
+
+    if (config.postInstall) {
+      await config.postInstall();
+    }
   } catch (error) {
     throw new Error(`Failed to download ${nameKey}: ${error.message}`);
   }
